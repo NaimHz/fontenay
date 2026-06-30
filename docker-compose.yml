@@ -1,0 +1,27 @@
+# =====================================================================
+#  Fontenay Restaurants — Environnement de développement
+#  Briques souveraines, auto-hébergeables (aucun service tiers).
+#  En dev : PostgreSQL tourne en conteneur ; l'API Symfony et les deux
+#  fronts React se lancent en local (voir README).
+#  Temps réel : assuré côté applicatif par polling léger (pas d'infra dédiée).
+# =====================================================================
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: fontenay_db
+    environment:
+      POSTGRES_DB: fontenay
+      POSTGRES_USER: fontenay
+      POSTGRES_PASSWORD: fontenay
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fontenay"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:

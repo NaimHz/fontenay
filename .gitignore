@@ -1,0 +1,32 @@
+# Dépendances
+node_modules/
+vendor/
+
+# Build / dist
+dist/
+build/
+/api/public/bundles/
+/api/var/
+
+# Env & secrets
+.env.local
+.env.*.local
+/api/.env.local
+*.pem
+!docker/**/*.pem
+
+# JWT keys (générées localement)
+/api/config/jwt/*.pem
+
+# Caches & logs
+.cache/
+*.log
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
