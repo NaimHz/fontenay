@@ -1,0 +1,71 @@
+name: CI
+
+# CI minimale : vérifie que l'API et les deux fronts compilent et passent
+# leurs tests à chaque push / pull request sur les branches principales.
+on:
+  push:
+    branches: [main, develop, prod]
+  pull_request:
+    branches: [main, develop, prod]
+
+jobs:
+  api:
+    name: API (Symfony)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: ctype, iconv, pdo, pdo_pgsql
+          tools: composer
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      - name: Tests (PHPUnit)
+        run: php bin/phpunit
+
+  web-reservation:
+    name: Site réservation (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-reservation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web-reservation/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Tests (Vitest)
+        run: npm run test
+      - name: Build
+        run: npm run build
+
+  app-staff:
+    name: App staff (React PWA)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-staff
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app-staff/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Tests (Vitest)
+        run: npm run test
+      - name: Build
+        run: npm run build
