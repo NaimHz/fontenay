@@ -8,6 +8,12 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
+    /* Design system partagé */
+    "paths": {
+      "@ui": ["../packages/ui/index.ts"],
+      "@ui/*": ["../packages/ui/*"]
+    },
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

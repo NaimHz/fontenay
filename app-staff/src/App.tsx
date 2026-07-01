@@ -1,121 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// Vitrine du design system côté app staff (plan de salle + prise de commande).
+// Les écrans réels (login, salle, commande, cuisine) sont livrés aux lots suivants.
+const tables = [
+  { number: '01', seats: 2, status: 'reserved' },
+  { number: '02', seats: 4, status: 'free' },
+  { number: '03', seats: 4, status: 'occupied' },
+  { number: '04', seats: 2, status: 'free' },
+] as const
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div>
+      <header className="app-header">
+        <span className="brand">Fontenay</span>
+        <nav className="app-nav">
+          <a className="is-active" href="#">Plan de salle</a>
+          <a href="#">Planning</a>
+          <a href="#">Cuisine</a>
+        </nav>
+      </header>
+
+      <div className="container" style={{ paddingBlock: 24 }}>
+        <span className="eyebrow">Plan de salle</span>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+            gap: 12,
+            marginTop: 12,
+          }}
         >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          {tables.map((t) => (
+            <div key={t.number} className={`table-card is-${t.status}`}>
+              <span className="num">{t.number}</span>
+              <span className="seats">{t.seats} couv.</span>
+            </div>
+          ))}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <div className="row" style={{ marginTop: 24, gap: 16 }}>
+          <div className="dish-card is-selected" style={{ width: 180 }}>
+            <strong>Tomates Mozza</strong>
+            <span className="price">12,50 €</span>
+            <span className="badge badge--allergy">⚠ Lait</span>
+          </div>
+          <div className="dish-card" style={{ width: 180 }}>
+            <strong>Poulet Curry</strong>
+            <span className="price">24,00 €</span>
+          </div>
+        </div>
+
+        <div className="row" style={{ marginTop: 24 }}>
+          <button className="btn btn--primary btn--lg">+ Ajout de commande</button>
+          <button className="btn btn--danger btn--lg">✕ Facture &amp; clôture</button>
+        </div>
+      </div>
+    </div>
   )
 }
 
