@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ReservationForm } from './ReservationForm'
+import { Confirmation } from './Confirmation'
 import type { ReservationResult } from './api'
-import { formatDate, serviceLabel } from './lib/format'
 
 function App() {
   const [result, setResult] = useState<ReservationResult | null>(null)
@@ -14,26 +14,7 @@ function App() {
       </header>
 
       {result ? (
-        <div className="stack">
-          <div className="panel-gold">
-            <h1 style={{ margin: 0 }}>Réservation enregistrée</h1>
-            <p style={{ margin: 0 }}>{result.establishment}</p>
-          </div>
-          <div className="card">
-            <p>
-              {result.partySize} couverts · {serviceLabel(result.service as 'midi' | 'soir')} du{' '}
-              {formatDate(result.date)}.
-            </p>
-            {result.waitlisted && (
-              <p className="badge badge--allergy">
-                Service complet : vous êtes en liste d'attente, nous vous rappellerons.
-              </p>
-            )}
-            <button className="btn btn--ghost" type="button" onClick={() => setResult(null)}>
-              Nouvelle réservation
-            </button>
-          </div>
-        </div>
+        <Confirmation result={result} onReset={() => setResult(null)} />
       ) : (
         <>
           <div className="panel-gold" style={{ marginBottom: 24 }}>
