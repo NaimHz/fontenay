@@ -54,8 +54,9 @@ docker compose up -d
 
 # 2. API
 cd api && composer install
+php bin/console lexik:jwt:generate-keypair      # clés JWT (locales, non versionnées)
 php bin/console doctrine:migrations:migrate -n
-php bin/console doctrine:fixtures:load -n      # jeux de données + comptes de test
+php bin/console doctrine:fixtures:load -n       # jeux de données + comptes de test
 symfony serve -d                                # http://localhost:8000
 
 # 3. Site de réservation
@@ -67,7 +68,17 @@ cd ../app-staff && npm install && npm run dev          # http://localhost:5174
 
 ## Comptes de test
 
-> Renseignés à la livraison du module d'authentification.
+Authentification par JWT (`POST /api/login` avec `{ email, password }`).
+Mot de passe identique pour tous les comptes de démonstration : **`password`**.
+
+| Email | Rôle | Établissement |
+|-------|------|---------------|
+| `owner@fontenay.fr` | Propriétaire | Tous |
+| `maitre@clos.fr` | Maître d'hôtel | Le Clos Fontenay |
+| `serveur@clos.fr` | Serveur | Le Clos Fontenay |
+| `cuisine@clos.fr` | Cuisinier | Le Clos Fontenay |
+| `maitre@cellier.fr` | Maître d'hôtel | Le Cellier Fontenay |
+| `serveur@cellier.fr` | Serveur | Le Cellier Fontenay |
 
 ## Périmètre du prototype
 
