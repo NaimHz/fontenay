@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\DiningTable;
 use App\Entity\Establishment;
 use App\Enum\ReservationStatus;
 use App\Enum\ServiceType;
@@ -53,5 +54,35 @@ class ReservationRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
 
         return $count > 0;
+    }
+
+    /** Réservations d'un service (planning) pour un établissement et une date. */
+    public function planning(Establishment $establishment, \DateTimeImmutable $date): array
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.establishment = :establishment')
+            ->andWhere('r.date = :date')
+            ->andWhere('r.status != :cancelled')
+            ->setParameter('establishment', $establishment)
+            ->setParameter('date', $date)
+            ->setParameter('cancelled', ReservationStatus::CANCELLED->value)
+            ->orderBy('r.service', 'ASC')
+            ->addOrderBy('r.customerName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Réservation actuellement installée à une table (pour rattacher les allergies à la commande). */
+    public function activeForTable(DiningTable $table): ?Reservation
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.diningTable = :table')
+            ->andWhere('r.status = :seated')
+            ->setParameter('table', $table)
+            ->setParameter('seated', ReservationStatus::SEATED->value)
+            ->orderBy('r.date', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }
