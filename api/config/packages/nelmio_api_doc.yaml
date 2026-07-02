@@ -1,0 +1,22 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Fontenay API
+            description: API de gestion de restaurant (salle, commandes, cuisine, réservations).
+            version: 1.0.0
+        components:
+            securitySchemes:
+                bearerAuth:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - bearerAuth: []
+    areas:
+        default:
+            path_patterns:
+                - ^/api
+            security:
+                bearerAuth:
+                    type: http
+                    scheme: bearer

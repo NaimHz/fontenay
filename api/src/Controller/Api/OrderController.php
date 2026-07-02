@@ -8,6 +8,9 @@ use App\Entity\User;
 use App\Enum\OrderItemStatus;
 use App\Enum\OrderStatus;
 use App\Enum\TableStatus;
+use App\OpenApi\Schema\KitchenOrderSchema;
+use App\OpenApi\Schema\OrderItemSchema;
+use App\OpenApi\Schema\OrderSchema;
 use App\Repository\DiningTableRepository;
 use App\Repository\DishRepository;
 use App\Repository\OrderRepository;
@@ -15,6 +18,8 @@ use App\Repository\ReservationRepository;
 use App\Service\ApiNormalizer;
 use App\Service\EstablishmentResolver;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +27,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /** Prise de commande, transmission en cuisine, suivi des plats et clôture de table. */
 #[Route('/api')]
+#[OA\Tag(name: 'Commandes')]
 class OrderController extends AbstractController
 {
     public function __construct(
@@ -37,6 +43,19 @@ class OrderController extends AbstractController
 
     /** Prend une commande à une table et l'envoie directement en cuisine. */
     #[Route('/orders', name: 'api_order_create', methods: ['POST'])]
+    #[OA\RequestBody(content: new OA\JsonContent(
+        required: ['tableId', 'items'],
+        properties: [
+            new OA\Property(property: 'tableId', type: 'integer'),
+            new OA\Property(property: 'items', type: 'array', items: new OA\Items(properties: [
+                new OA\Property(property: 'dishId', type: 'integer'),
+                new OA\Property(property: 'quantity', type: 'integer'),
+                new OA\Property(property: 'seatNumber', type: 'integer', nullable: true),
+            ])),
+        ],
+    ))]
+    #[OA\Response(response: 201, description: 'Commande créée et envoyée en cuisine.', content: new Model(type: OrderSchema::class))]
+    #[OA\Response(response: 422, description: 'Table inconnue ou aucun plat valide.')]
     public function create(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -84,6 +103,13 @@ class OrderController extends AbstractController
 
     /** Commande en cours d'une table (pour l'afficher / demander l'addition). */
     #[Route('/orders', name: 'api_order_active', methods: ['GET'])]
+    #[OA\Parameter(name: 'tableId', in: 'query', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200,
+        description: "Commande en cours de la table, ou `null` s'il n'y en a pas.",
+        content: new OA\JsonContent(ref: new Model(type: OrderSchema::class), nullable: true),
+    )]
+    #[OA\Response(response: 422, description: 'Table inconnue.')]
     public function active(Request $request): JsonResponse
     {
         $table = $this->tables->find($request->query->getInt('tableId'));
@@ -98,6 +124,8 @@ class OrderController extends AbstractController
 
     /** Clôture la table (addition demandée) et la libère. */
     #[Route('/orders/{id}/close', name: 'api_order_close', methods: ['POST'])]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Commande clôturée, table libérée.', content: new Model(type: OrderSchema::class))]
     public function close(Order $order): JsonResponse
     {
         $order->setStatus(OrderStatus::CLOSED);
@@ -109,6 +137,18 @@ class OrderController extends AbstractController
 
     /** Fil de la cuisine : commandes entrantes en temps réel (polling), allergies en évidence. */
     #[Route('/kitchen/orders', name: 'api_kitchen_orders', methods: ['GET'])]
+    #[OA\Parameter(
+        name: 'establishmentId',
+        description: "Requis si l'utilisateur est rattaché à plusieurs établissements.",
+        in: 'query',
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Commandes envoyées en cuisine et pas encore entièrement servies.',
+        content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: new Model(type: KitchenOrderSchema::class))),
+    )]
+    #[OA\Response(response: 400, description: 'Établissement non déterminé.')]
     public function kitchen(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -125,6 +165,15 @@ class OrderController extends AbstractController
 
     /** Validation d'un plat côté cuisine (en préparation / servi). */
     #[Route('/order-items/{id}', name: 'api_order_item_update', methods: ['PATCH'])]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(content: new OA\JsonContent(
+        required: ['status'],
+        properties: [
+            new OA\Property(property: 'status', type: 'string', enum: ['pending', 'in_preparation', 'served']),
+        ],
+    ))]
+    #[OA\Response(response: 200, description: 'Plat mis à jour.', content: new Model(type: OrderItemSchema::class))]
+    #[OA\Response(response: 422, description: 'Statut invalide.')]
     public function updateItem(OrderItem $item, Request $request): JsonResponse
     {
         $status = OrderItemStatus::tryFrom((string) (json_decode($request->getContent(), true)['status'] ?? ''));

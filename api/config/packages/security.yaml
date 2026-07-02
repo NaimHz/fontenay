@@ -38,6 +38,8 @@ security:
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         # Réservation publique (site client) : accessible sans authentification.
         - { path: ^/api/public, roles: PUBLIC_ACCESS }
+        # Documentation de l'API (Swagger UI + OpenAPI JSON) : accessible sans authentification.
+        - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         # Tout le reste de l'API nécessite d'être connecté.
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 

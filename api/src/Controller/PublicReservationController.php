@@ -7,10 +7,14 @@ namespace App\Controller;
 use App\Entity\Reservation;
 use App\Enum\ReservationStatus;
 use App\Enum\ServiceType;
+use App\OpenApi\Schema\EstablishmentSchema;
 use App\Repository\EstablishmentRepository;
 use App\Repository\ReservationRepository;
 use App\Service\AvailabilityChecker;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use Nelmio\ApiDocBundle\Attribute\Security as ApiSecurity;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +26,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * liste d'attente quand le service est complet.
  */
 #[Route('/api/public')]
+#[OA\Tag(name: 'Réservations publiques')]
+#[ApiSecurity(name: null)]
 class PublicReservationController extends AbstractController
 {
     public function __construct(
@@ -33,6 +39,11 @@ class PublicReservationController extends AbstractController
 
     /** Liste des établissements (pour le sélecteur du formulaire). */
     #[Route('/establishments', name: 'public_establishments', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Établissements ouverts à la réservation.',
+        content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: new Model(type: EstablishmentSchema::class))),
+    )]
     public function establishments(): JsonResponse
     {
         $data = array_map(static fn($e) => [
@@ -48,6 +59,21 @@ class PublicReservationController extends AbstractController
 
     /** Disponibilité en temps réel pour un établissement / date / service / nb de couverts. */
     #[Route('/availability', name: 'public_availability', methods: ['GET'])]
+    #[OA\Parameter(name: 'establishmentId', in: 'query', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'service', in: 'query', required: true, schema: new OA\Schema(type: 'string', enum: ['midi', 'soir']))]
+    #[OA\Parameter(name: 'date', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date'))]
+    #[OA\Parameter(name: 'partySize', in: 'query', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(
+        response: 200,
+        description: 'Disponibilité et couverts restants pour ce service.',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'available', type: 'boolean'),
+            new OA\Property(property: 'capacity', type: 'integer'),
+            new OA\Property(property: 'booked', type: 'integer'),
+            new OA\Property(property: 'remaining', type: 'integer'),
+        ]),
+    )]
+    #[OA\Response(response: 422, description: 'Paramètres invalides.')]
     public function availability(Request $request): JsonResponse
     {
         $establishment = $this->establishments->find((int) $request->query->get('establishmentId'));
@@ -71,6 +97,35 @@ class PublicReservationController extends AbstractController
 
     /** Création d'une réservation. Bascule en liste d'attente si le service est complet. */
     #[Route('/reservations', name: 'public_reservation_create', methods: ['POST'])]
+    #[OA\RequestBody(content: new OA\JsonContent(
+        required: ['establishmentId', 'service', 'date', 'partySize', 'customerName', 'customerEmail', 'customerPhone'],
+        properties: [
+            new OA\Property(property: 'establishmentId', type: 'integer'),
+            new OA\Property(property: 'service', type: 'string', enum: ['midi', 'soir']),
+            new OA\Property(property: 'date', type: 'string', format: 'date'),
+            new OA\Property(property: 'partySize', type: 'integer'),
+            new OA\Property(property: 'customerName', type: 'string'),
+            new OA\Property(property: 'customerEmail', type: 'string', format: 'email'),
+            new OA\Property(property: 'customerPhone', type: 'string'),
+            new OA\Property(property: 'allergies', type: 'string', nullable: true),
+            new OA\Property(property: 'specialRequest', type: 'string', nullable: true),
+        ],
+    ))]
+    #[OA\Response(
+        response: 201,
+        description: 'Réservation créée (éventuellement en liste d\'attente si le service est complet).',
+        content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'id', type: 'integer'),
+            new OA\Property(property: 'status', type: 'string', enum: ['pending', 'seated', 'cancelled', 'waitlist']),
+            new OA\Property(property: 'waitlisted', type: 'boolean'),
+            new OA\Property(property: 'establishment', type: 'string'),
+            new OA\Property(property: 'date', type: 'string', format: 'date'),
+            new OA\Property(property: 'service', type: 'string', enum: ['midi', 'soir']),
+            new OA\Property(property: 'partySize', type: 'integer'),
+        ]),
+    )]
+    #[OA\Response(response: 422, description: 'Champs invalides ou manquants.')]
+    #[OA\Response(response: 409, description: 'Une réservation existe déjà pour ce service et cet email.')]
     public function create(Request $request): JsonResponse
     {
         $payload = json_decode($request->getContent(), true) ?? [];
