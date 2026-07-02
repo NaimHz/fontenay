@@ -30,9 +30,25 @@ class DiningTable
     #[ORM\Column(enumType: TableStatus::class)]
     private TableStatus $status = TableStatus::FREE;
 
+    /** Serveur ayant installé le client à cette table (repère en salle). Null si libre. */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    private ?User $server = null;
+
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getServer(): ?User
+    {
+        return $this->server;
+    }
+
+    public function setServer(?User $server): self
+    {
+        $this->server = $server;
+
+        return $this;
     }
 
     public function getEstablishment(): ?Establishment

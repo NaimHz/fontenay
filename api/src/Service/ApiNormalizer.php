@@ -18,6 +18,7 @@ class ApiNormalizer
             'number' => $t->getNumber(),
             'seats' => $t->getSeats(),
             'status' => $t->getStatus()->value,
+            'server' => $t->getServer()?->getFullName(),
         ];
     }
 

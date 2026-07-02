@@ -101,9 +101,10 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  background: var(--surface);
+  padding: 14px 0px;
   border-bottom: 1px solid var(--border);
+  width: min(1100px, 100% - 2rem);
+  margin-inline: auto;
 }
 
 .app-nav {

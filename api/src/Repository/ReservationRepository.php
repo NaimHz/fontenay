@@ -72,6 +72,24 @@ class ReservationRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Réservations sur une plage de dates (vue semaine), triées par jour puis service. */
+    public function planningBetween(Establishment $establishment, \DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.establishment = :establishment')
+            ->andWhere('r.date BETWEEN :from AND :to')
+            ->andWhere('r.status != :cancelled')
+            ->setParameter('establishment', $establishment)
+            ->setParameter('from', $from)
+            ->setParameter('to', $to)
+            ->setParameter('cancelled', ReservationStatus::CANCELLED->value)
+            ->orderBy('r.date', 'ASC')
+            ->addOrderBy('r.service', 'ASC')
+            ->addOrderBy('r.customerName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     /** Réservation actuellement installée à une table (pour rattacher les allergies à la commande). */
     public function activeForTable(DiningTable $table): ?Reservation
     {

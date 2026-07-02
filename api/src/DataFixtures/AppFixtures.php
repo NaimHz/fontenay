@@ -78,6 +78,11 @@ class AppFixtures extends Fixture
         $r4 = $this->createReservation($cellier, 'Table Vidal', 'vidal@example.com', '0600000004', $today, ServiceType::SOIR, 3, 'Lactose', null);
         $manager->persist($r4);
 
+        // Réservations sur d'autres jours (pour la vue semaine).
+        $manager->persist($this->createReservation($clos, 'Groupe Martin', 'martin@example.com', '0600000005', $today->modify('+1 day'), ServiceType::MIDI, 8, null, 'Repas d\'affaires'));
+        $manager->persist($this->createReservation($clos, 'Mme Chevalier', 'chevalier@example.com', '0600000006', $today->modify('+2 days'), ServiceType::SOIR, 2, 'Fruits de mer', null));
+        $manager->persist($this->createReservation($clos, 'Famille Robert', 'robert@example.com', '0600000007', $today->modify('+3 days'), ServiceType::SOIR, 5, null, null));
+
         // --- Commande démo déjà envoyée en cuisine (table Lemoine) ----------
         // Permet à l'écran cuisine d'afficher une carte dès le chargement,
         // avec les allergies de la réservation mises en évidence.

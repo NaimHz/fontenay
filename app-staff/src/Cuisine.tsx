@@ -39,7 +39,7 @@ export function Cuisine() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
           gap: 16,
           marginTop: 12,
         }}

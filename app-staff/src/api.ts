@@ -53,6 +53,7 @@ export type Table = {
   number: string
   seats: number
   status: TableStatus
+  server: string | null
 }
 
 export type Reservation = {
@@ -77,7 +78,12 @@ export async function login(email: string, password: string): Promise<void> {
 
 export const getMe = () => request<StaffUser>('/api/me')
 export const getTables = () => request<Table[]>('/api/tables')
-export const getReservations = () => request<Reservation[]>('/api/reservations')
+
+/** Planning : sans argument = aujourd'hui ; avec { from, to } = plage (vue semaine). */
+export const getReservations = (params?: { from: string; to: string }) => {
+  const query = params ? `?from=${params.from}&to=${params.to}` : ''
+  return request<Reservation[]>(`/api/reservations${query}`)
+}
 
 export const updateTableStatus = (id: number, status: TableStatus) =>
   request<Table>(`/api/tables/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) })

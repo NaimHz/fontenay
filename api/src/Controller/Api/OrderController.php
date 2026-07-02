@@ -129,7 +129,7 @@ class OrderController extends AbstractController
     public function close(Order $order): JsonResponse
     {
         $order->setStatus(OrderStatus::CLOSED);
-        $order->getDiningTable()?->setStatus(TableStatus::FREE);
+        $order->getDiningTable()?->setStatus(TableStatus::FREE)->setServer(null);
         $this->em->flush();
 
         return $this->json($this->normalizer->order($order));

@@ -82,6 +82,9 @@ class SalleController extends AbstractController
         }
 
         $table->setStatus($status);
+        if ($status === TableStatus::FREE) {
+            $table->setServer(null);
+        }
         $this->em->flush();
 
         return $this->json($this->normalizer->table($table));
@@ -97,13 +100,25 @@ class SalleController extends AbstractController
     )]
     #[OA\Parameter(
         name: 'date',
-        description: 'Date du planning (AAAA-MM-JJ). Par défaut : aujourd\'hui.',
+        description: 'Vue jour : date (AAAA-MM-JJ). Par défaut : aujourd\'hui.',
+        in: 'query',
+        schema: new OA\Schema(type: 'string', format: 'date'),
+    )]
+    #[OA\Parameter(
+        name: 'from',
+        description: 'Vue semaine : début de plage (AAAA-MM-JJ), à utiliser avec "to".',
+        in: 'query',
+        schema: new OA\Schema(type: 'string', format: 'date'),
+    )]
+    #[OA\Parameter(
+        name: 'to',
+        description: 'Vue semaine : fin de plage (AAAA-MM-JJ), à utiliser avec "from".',
         in: 'query',
         schema: new OA\Schema(type: 'string', format: 'date'),
     )]
     #[OA\Response(
         response: 200,
-        description: 'Réservations du jour demandé.',
+        description: 'Réservations du jour (ou de la plage from/to).',
         content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: new Model(type: ReservationSchema::class))),
     )]
     #[OA\Response(response: 400, description: 'Établissement non déterminé.')]
@@ -116,10 +131,18 @@ class SalleController extends AbstractController
             return $this->json(['error' => 'Établissement non déterminé.'], 400);
         }
 
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $request->query->get('date', ''))
-            ?: new \DateTimeImmutable('today');
+        $from = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $request->query->get('from', ''));
+        $to = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $request->query->get('to', ''));
 
-        $reservations = $this->reservations->planning($establishment, $date);
+        if ($from && $to) {
+            // Vue semaine : réservations sur une plage de dates.
+            $reservations = $this->reservations->planningBetween($establishment, $from, $to);
+        } else {
+            // Vue jour : une seule date (ou aujourd'hui par défaut).
+            $date = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $request->query->get('date', ''))
+                ?: new \DateTimeImmutable('today');
+            $reservations = $this->reservations->planning($establishment, $date);
+        }
 
         return $this->json(array_map($this->normalizer->reservation(...), $reservations));
     }
@@ -143,8 +166,11 @@ class SalleController extends AbstractController
             return $this->json(['error' => 'Table invalide.'], 422);
         }
 
+        /** @var User $user */
+        $user = $this->getUser();
+
         $reservation->setDiningTable($table)->setStatus(ReservationStatus::SEATED);
-        $table->setStatus(TableStatus::OCCUPIED);
+        $table->setStatus(TableStatus::OCCUPIED)->setServer($user);
         $this->em->flush();
 
         return $this->json($this->normalizer->reservation($reservation));
