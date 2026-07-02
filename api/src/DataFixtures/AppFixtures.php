@@ -5,9 +5,13 @@ namespace App\DataFixtures;
 use App\Entity\Dish;
 use App\Entity\DiningTable;
 use App\Entity\Establishment;
+use App\Entity\Order;
+use App\Entity\OrderItem;
 use App\Entity\Reservation;
 use App\Entity\User;
 use App\Enum\DishCategory;
+use App\Enum\OrderItemStatus;
+use App\Enum\OrderStatus;
 use App\Enum\ReservationStatus;
 use App\Enum\ServiceType;
 use App\Enum\TableStatus;
@@ -51,7 +55,7 @@ class AppFixtures extends Fixture
         $this->createUser($manager, 'serveur@cellier.fr', 'Yanis Dubois', [User::ROLE_SERVER], $cellier);
 
         // --- Carte ----------------------------------------------------------
-        $this->createMenu($manager, $clos);
+        $closDishes = $this->createMenu($manager, $clos);
         $this->createMenu($manager, $cellier);
 
         // --- Réservations du jour (avec allergies) --------------------------
@@ -73,6 +77,19 @@ class AppFixtures extends Fixture
 
         $r4 = $this->createReservation($cellier, 'Table Vidal', 'vidal@example.com', '0600000004', $today, ServiceType::SOIR, 3, 'Lactose', null);
         $manager->persist($r4);
+
+        // --- Commande démo déjà envoyée en cuisine (table Lemoine) ----------
+        // Permet à l'écran cuisine d'afficher une carte dès le chargement,
+        // avec les allergies de la réservation mises en évidence.
+        $order = (new Order())
+            ->setDiningTable($closTables[2])
+            ->setReservation($r1)
+            ->setStatus(OrderStatus::SENT)
+            ->setSentAt(new \DateTimeImmutable());
+        $order->addItem($this->orderLine($closDishes[0], 2, OrderItemStatus::PENDING));        // Tomates Mozza
+        $order->addItem($this->orderLine($closDishes[3], 2, OrderItemStatus::IN_PREPARATION)); // Poulet Curry
+        $order->addItem($this->orderLine($closDishes[7], 1, OrderItemStatus::PENDING));        // Tarte au citron
+        $manager->persist($order);
 
         $manager->flush();
     }
@@ -109,8 +126,10 @@ class AppFixtures extends Fixture
         $manager->persist($user);
     }
 
-    private function createMenu(ObjectManager $manager, Establishment $establishment): void
+    /** @return Dish[] */
+    private function createMenu(ObjectManager $manager, Establishment $establishment): array
     {
+        $created = [];
         $dishes = [
             [DishCategory::ENTREE, 'Tomates Mozza', '12.50', 'Lait'],
             [DishCategory::ENTREE, 'Salade César', '13.00', 'Œuf, Gluten, Poisson (anchois)'],
@@ -134,7 +153,19 @@ class AppFixtures extends Fixture
                 ->setPrice($price)
                 ->setAllergens($allergens);
             $manager->persist($dish);
+            $created[] = $dish;
         }
+
+        return $created;
+    }
+
+    private function orderLine(Dish $dish, int $quantity, OrderItemStatus $status): OrderItem
+    {
+        return (new OrderItem())
+            ->setDish($dish)
+            ->setQuantity($quantity)
+            ->setUnitPrice($dish->getPrice())
+            ->setStatus($status);
     }
 
     private function createReservation(

@@ -33,38 +33,47 @@ commandes, changements d'état des tables).
 
 | Dossier            | Rôle                                   | Stack                     |
 |--------------------|----------------------------------------|---------------------------|
-| `api/`             | Cœur applicatif, API REST, auth JWT    | Symfony 7 · PHP 8.x       |
+| `api/`             | Cœur applicatif, API REST, auth JWT    | Symfony 7 · PHP 8.4       |
 | `web-reservation/` | Site public de réservation             | React · Vite              |
 | `app-staff/`       | App serveurs + cuisine (installable)   | React · Vite · PWA        |
-| `design/`          | Design system (DA extraite du Figma)   | —                         |
+| `packages/ui/`     | Design system partagé (thème, classes) | CSS                       |
+| `design/`          | Direction artistique (extraite du Figma) | —                       |
 
 ## Prérequis
 
 - Docker + Docker Compose
-- PHP 8.2+ et Composer
+- PHP 8.4+ et Composer
 - Node.js 18+ et npm
 
 ## Installation & lancement
 
-> Détaillé au fur et à mesure que les briques sont livrées. Procédure cible :
-
 ```bash
-# 1. Infra (PostgreSQL + Mercure)
+# 1. Base de données (PostgreSQL en conteneur)
 docker compose up -d
 
-# 2. API
-cd api && composer install
-php bin/console lexik:jwt:generate-keypair      # clés JWT (locales, non versionnées)
+# 2. API — http://localhost:8000
+cd api
+composer install
+php bin/console lexik:jwt:generate-keypair   # clés JWT (locales, non versionnées)
 php bin/console doctrine:migrations:migrate -n
-php bin/console doctrine:fixtures:load -n       # jeux de données + comptes de test
-symfony serve -d                                # http://localhost:8000
+php bin/console doctrine:fixtures:load -n     # jeux de données + comptes de test
+symfony serve -d
 
-# 3. Site de réservation
-cd ../web-reservation && npm install && npm run dev   # http://localhost:5173
+# 3. Site de réservation — http://localhost:5173
+cd ../web-reservation && npm install && npm run dev
 
-# 4. App staff (PWA)
-cd ../app-staff && npm install && npm run dev          # http://localhost:5174
+# 4. App staff (PWA) — http://localhost:5174
+cd ../app-staff && npm install && npm run dev
 ```
+
+> **Port de l'API.** Les fronts appellent `http://localhost:8000` par défaut. Si l'API
+> tourne ailleurs, lancez les fronts avec la variable `VITE_API_URL`, par ex. :
+> `VITE_API_URL=http://localhost:8001 npm run dev`.
+
+**Documentation de l'API** (Swagger/OpenAPI) : http://localhost:8000/api/doc
+
+**Installation en PWA** : ouvrez l'app staff dans Chrome → « Installer l'application ».
+La coquille reste disponible hors-ligne (mode dégradé).
 
 ## Comptes de test
 
@@ -79,6 +88,29 @@ Mot de passe identique pour tous les comptes de démonstration : **`password`**.
 | `cuisine@clos.fr` | Cuisinier | Le Clos Fontenay |
 | `maitre@cellier.fr` | Maître d'hôtel | Le Cellier Fontenay |
 | `serveur@cellier.fr` | Serveur | Le Cellier Fontenay |
+
+## Parcours de démonstration
+
+1. **Réservation (Module A)** — sur le site (`:5173`), choisir un établissement, une
+   date et un service, vérifier la disponibilité, saisir ses allergies, confirmer.
+2. **Plan de salle (Module B)** — se connecter à l'app staff (`:5174`) avec
+   `serveur@clos.fr`. Le plan de salle affiche les tables (vert = libre, rouge =
+   occupée), et le planning du jour avec les allergies. Installer un client à une table.
+3. **Prise de commande (Module C)** — taper une table, choisir des plats par catégorie,
+   envoyer en cuisine.
+4. **Cuisine (Module D)** — onglet « Cuisine » (ou compte `cuisine@clos.fr`) : les
+   commandes arrivent en direct, allergies en évidence ; valider les plats (en
+   préparation → servi).
+
+## Tests & intégration continue
+
+```bash
+cd api && php bin/phpunit          # tests API (PHPUnit)
+cd web-reservation && npm test     # tests front (Vitest) — idem app-staff
+```
+
+Une CI GitHub Actions (`.github/workflows/ci.yml`) exécute, à chaque push, les tests et
+le build des trois briques.
 
 ## Périmètre du prototype
 
