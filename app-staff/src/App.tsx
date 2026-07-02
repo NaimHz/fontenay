@@ -1,9 +1,14 @@
+import { useState } from 'react'
 import { AuthProvider, useAuth } from './auth'
+import type { Table } from './api'
 import { Login } from './Login'
 import { PlanDeSalle } from './PlanDeSalle'
+import { Commande } from './Commande'
 
 function Shell() {
   const { user, signOut } = useAuth()
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+
   return (
     <div>
       <header className="app-header">
@@ -18,7 +23,12 @@ function Shell() {
           </button>
         </div>
       </header>
-      <PlanDeSalle />
+
+      {selectedTable ? (
+        <Commande table={selectedTable} onBack={() => setSelectedTable(null)} />
+      ) : (
+        <PlanDeSalle onSelectTable={setSelectedTable} />
+      )}
     </div>
   )
 }

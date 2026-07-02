@@ -87,3 +87,44 @@ export const seatReservation = (id: number, tableId: number) =>
     method: 'POST',
     body: JSON.stringify({ tableId }),
   })
+
+export type DishCategory = 'entree' | 'plat' | 'dessert' | 'boisson' | 'digestif'
+
+export type Dish = {
+  id: number
+  name: string
+  category: DishCategory
+  price: string
+  allergens: string | null
+}
+
+export type OrderItem = {
+  id: number
+  dishId: number
+  name: string
+  category: string
+  quantity: number
+  seatNumber: number | null
+  status: string
+  unitPrice: string
+}
+
+export type Order = {
+  id: number
+  tableId: number
+  tableNumber: string
+  status: string
+  total: string
+  items: OrderItem[]
+}
+
+export const getDishes = () => request<Dish[]>('/api/dishes')
+
+export const getActiveOrder = (tableId: number) =>
+  request<Order | null>(`/api/orders?tableId=${tableId}`)
+
+export const createOrder = (tableId: number, items: { dishId: number; quantity: number }[]) =>
+  request<Order>('/api/orders', { method: 'POST', body: JSON.stringify({ tableId, items }) })
+
+export const closeOrder = (orderId: number) =>
+  request<Order>(`/api/orders/${orderId}/close`, { method: 'POST' })

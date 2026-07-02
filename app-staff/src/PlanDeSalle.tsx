@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  getReservations,
-  getTables,
-  seatReservation,
-  updateTableStatus,
-} from './api'
+import { getReservations, getTables, seatReservation } from './api'
 import type { Reservation, Table } from './api'
 
-export function PlanDeSalle() {
+export function PlanDeSalle({ onSelectTable }: { onSelectTable: (table: Table) => void }) {
   const [tables, setTables] = useState<Table[]>([])
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -32,11 +27,6 @@ export function PlanDeSalle() {
 
   const firstFreeTable = tables.find((t) => t.status === 'free')
 
-  async function toggleTable(table: Table) {
-    await updateTableStatus(table.id, table.status === 'free' ? 'occupied' : 'free')
-    refresh()
-  }
-
   async function seat(reservation: Reservation) {
     if (!firstFreeTable) return
     await seatReservation(reservation.id, firstFreeTable.id)
@@ -57,7 +47,7 @@ export function PlanDeSalle() {
         }}
       >
         {tables.map((t) => (
-          <button key={t.id} type="button" className={`table-card is-${t.status}`} onClick={() => toggleTable(t)}>
+          <button key={t.id} type="button" className={`table-card is-${t.status}`} onClick={() => onSelectTable(t)}>
             <span className="num">{t.number}</span>
             <span className="seats">{t.seats} couv.</span>
           </button>
