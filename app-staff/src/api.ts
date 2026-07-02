@@ -128,3 +128,21 @@ export const createOrder = (tableId: number, items: { dishId: number; quantity: 
 
 export const closeOrder = (orderId: number) =>
   request<Order>(`/api/orders/${orderId}/close`, { method: 'POST' })
+
+export type OrderItemStatus = 'pending' | 'in_preparation' | 'served'
+
+export type KitchenOrder = {
+  id: number
+  tableNumber: string
+  sentAt: string | null
+  allergies: string | null
+  items: OrderItem[]
+}
+
+export const getKitchenOrders = () => request<KitchenOrder[]>('/api/kitchen/orders')
+
+export const updateOrderItem = (id: number, status: OrderItemStatus) =>
+  request<OrderItem>(`/api/order-items/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
