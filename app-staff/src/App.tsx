@@ -9,7 +9,7 @@ import { Cuisine } from './Cuisine'
 type View = 'salle' | 'cuisine'
 
 function Shell() {
-  const { user, signOut } = useAuth()
+  const { user, establishments, establishmentId, selectEstablishment, signOut } = useAuth()
   const [view, setView] = useState<View>('salle')
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
 
@@ -39,6 +39,18 @@ function Shell() {
           </a>
         </nav>
         <div className="row">
+          {establishments.length > 1 && (
+            <select
+              className="select"
+              style={{ width: 'auto' }}
+              value={establishmentId ?? ''}
+              onChange={(e) => selectEstablishment(Number(e.target.value))}
+            >
+              {establishments.map((e) => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+          )}
           <span className="muted">{user?.fullName}</span>
           <button className="btn btn--ghost" type="button" onClick={signOut}>
             Déconnexion

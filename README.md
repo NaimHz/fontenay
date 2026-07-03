@@ -6,6 +6,18 @@ Couvre le parcours essentiel de bout en bout : un client **réserve en ligne**, 
 service **visualise sa salle** et **prend la commande à table**, la **cuisine**
 la reçoit en direct.
 
+## Démo en ligne
+
+Application staff hébergée sur une instance **AWS EC2** : **https://staff.tombenat.fr/**
+
+## Équipe
+
+Étudiants **M1 Développement** à **My Digital School** :
+
+- **Shannon Besson**
+- **Tom Benat**
+- **Naïm Hamza-Zerigat**
+
 ## Architecture
 
 ```

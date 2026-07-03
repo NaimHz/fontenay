@@ -12,6 +12,13 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+// Établissement courant (utile pour le propriétaire, multi-sites). Ajouté aux
+// requêtes ; ignoré par l'API pour les utilisateurs rattachés à un établissement.
+let currentEstablishmentId: number | null = null
+export function setEstablishment(id: number | null): void {
+  currentEstablishmentId = id
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly body: unknown
@@ -25,6 +32,9 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken()
+  if (currentEstablishmentId !== null) {
+    path += (path.includes('?') ? '&' : '?') + `establishmentId=${currentEstablishmentId}`
+  }
   const res = await fetch(`${API}${path}`, {
     ...init,
     headers: {
@@ -77,6 +87,10 @@ export async function login(email: string, password: string): Promise<void> {
 }
 
 export const getMe = () => request<StaffUser>('/api/me')
+
+export type StaffEstablishment = { id: number; name: string }
+export const getEstablishments = () => request<StaffEstablishment[]>('/api/public/establishments')
+
 export const getTables = () => request<Table[]>('/api/tables')
 
 /** Planning : sans argument = aujourd'hui ; avec { from, to } = plage (vue semaine). */
