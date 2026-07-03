@@ -1,0 +1,9 @@
+# Contexte de build de deploy/caddy.Dockerfile (racine du repo) :
+# on exclut tout ce qui est lourd ou sensible.
+.git
+**/node_modules
+**/dist
+api/vendor
+api/var
+api/.env.local
+api/config/jwt/*.pem
