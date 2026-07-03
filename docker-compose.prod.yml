@@ -1,0 +1,64 @@
+# =====================================================================
+#  Fontenay Restaurants — Production (un seul VPS, une seule commande)
+#  Lancement :  docker compose -f docker-compose.prod.yml up -d --build
+#  Secrets    : copier .env.prod.example en .env et le remplir (jamais commité).
+#  HTTPS      : automatique via Caddy + Let's Encrypt (ports 80/443 ouverts).
+# =====================================================================
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fontenay
+      POSTGRES_USER: fontenay
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fontenay"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: postgresql://fontenay:${DB_PASSWORD}@database:5432/fontenay?serverVersion=16&charset=utf8
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN}
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE}
+    volumes:
+      # Clés JWT générées une fois sur le serveur (voir README déploiement)
+      - jwt_keys:/app/config/jwt
+
+  caddy:
+    build:
+      context: .
+      dockerfile: deploy/caddy.Dockerfile
+      args:
+        # Figée dans le bundle des fronts au moment du build
+        VITE_API_URL: https://api.${DOMAIN}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      # Certificats Let's Encrypt — à conserver entre deux redéploiements
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  jwt_keys:
+  caddy_data:
+  caddy_config:
