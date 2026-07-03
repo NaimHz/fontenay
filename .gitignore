@@ -9,6 +9,7 @@ build/
 /api/var/
 
 # Env & secrets
+/.env
 .env.local
 .env.*.local
 /api/.env.local

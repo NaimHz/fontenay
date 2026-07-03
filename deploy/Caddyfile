@@ -1,0 +1,31 @@
+# Reverse proxy de production — HTTPS automatique via Let's Encrypt.
+# Les variables {$...} viennent de l'environnement du conteneur (docker-compose.prod.yml).
+{
+	email {$ACME_EMAIL}
+}
+
+# API Symfony (PHP-FPM dans le conteneur `api`)
+api.{$DOMAIN} {
+	root * /srv/api/public
+	encode zstd gzip
+	php_fastcgi api:9000 {
+		root /app/public
+	}
+	file_server
+}
+
+# Site de réservation (SPA React — tout renvoie vers index.html)
+resa.{$DOMAIN} {
+	root * /srv/resa
+	encode zstd gzip
+	try_files {path} /index.html
+	file_server
+}
+
+# App staff (PWA — le HTTPS est requis pour le service worker)
+staff.{$DOMAIN} {
+	root * /srv/staff
+	encode zstd gzip
+	try_files {path} /index.html
+	file_server
+}
